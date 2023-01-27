@@ -41,17 +41,6 @@ app.use(express.json())
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 app.listen(PORT, () => {
     console.log(`API listening on PORT ${PORT} `)
 })
@@ -64,9 +53,6 @@ app.get('/about', (req, res) => {
     const html = nunjucks.render('./Views/visiteur.html',{})
     res.send(html)
 })
-
-
-
 
 app.get('/private', passport.authenticate('jwt', { session: false }), (req, res) => {
     res.send('private. user:' + req.user.email)
