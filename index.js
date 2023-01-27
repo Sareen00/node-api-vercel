@@ -1,12 +1,56 @@
 // index.js
-const visiteur = require('./Views/visiteur.html')
 const express = require('express')
+const app = express()
+const PORT = 4000
+
 const axios = require('axios')
 const nunjucks = require('nunjucks')
 
 
-const app = express()
-const PORT = 4000
+const passport = require('passport')
+const jwt = require('jsonwebtoken')
+const passportJWT = require('passport-jwt')
+const secret = 'secretsentence'
+const ExtractJwt = passportJWT.ExtractJwt
+const JwtStrategy = passportJWT.Strategy
+
+const jwtOptions = {
+    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    secretOrKey: secret
+}
+
+const users = [{ email: 'pcavalet@kaliop.com', password: 'kaliop' }]
+
+
+passport.use(
+    new JwtStrategy(jwtOptions, function(payload, next) {
+        const user = users.find(user => user.email === payload.email)
+
+        if (user) {
+            next(null, user)
+        } else {
+            next(null, false)
+        }
+    })
+)
+
+
+app.use(passport.initialize())
+app.use(express.json())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 app.listen(PORT, () => {
     console.log(`API listening on PORT ${PORT} `)
@@ -17,14 +61,14 @@ app.get('/', (req, res) => {
 })
 
 app.get('/about', (req, res) => {
-    const html = nunjucks.render(visiteur)
+    const html = nunjucks.render('./Views/visiteur.html',{})
     res.send(html)
 })
 
 
 
 
-app.get('/connected', passport.authenticate('jwt', { session: false }), (req, res) => {
+app.get('/private', passport.authenticate('jwt', { session: false }), (req, res) => {
     res.send('private. user:' + req.user.email)
 })
 
