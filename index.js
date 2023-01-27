@@ -50,7 +50,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/about', (req, res) => {
-    const html = nunjucks.render('./Views/visiteur.html',{})
+    const html = nunjucks.render('./views/visiteur.html',{})
     res.send(html)
     //res.send('you ae on the about root')
 
