@@ -1,15 +1,14 @@
 // index.js
+
 const express = require('express')
 const app = express()
-const PORT = 4000
 
 const axios = require('axios')
-const nunjucks = require('nunjucks')
 
 const passport = require('passport')
 const jwt = require('jsonwebtoken')
 const passportJWT = require('passport-jwt')
-const secret = 'secretsentence'
+const secret = 'thisismysecret'
 const ExtractJwt = passportJWT.ExtractJwt
 const JwtStrategy = passportJWT.Strategy
 
@@ -18,11 +17,25 @@ const jwtOptions = {
     secretOrKey: secret
 }
 
-const users = [{ email: 'pcavalet@kaliop.com', password: 'kaliop' }]
-
 
 passport.use(
-    new JwtStrategy(jwtOptions, function(payload, next) {
+    new JwtStrategy(jwtOptions, async function(payload, next) {
+
+        const listUser = await axios({
+            method:"get",
+            url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
+            headers:{
+                "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+            },
+        });
+
+        var users =[]
+        for (const user of listUser.data) {
+            console.log(user.email)
+            users.push({email: user.email})
+        }
+        console.log(users)
+
         const user = users.find(user => user.email === payload.email)
 
         if (user) {
@@ -33,104 +46,119 @@ passport.use(
     })
 )
 
-
 app.use(passport.initialize())
+
 app.use(express.json())
 
-
-
-
-app.listen(PORT, () => {
-    console.log(`API listening on PORT ${PORT} `)
-})
-
 app.get('/', (req, res) => {
-    res.send('Hey this is my API running 🥳')
+    res.send('Hello world!')
 })
 
-app.get('/about', (req, res) => {
-    res.send('you ae on the about route')
-
-})
+app.get('/personnage', async function (req, res){
 
 
-//PRIVATE ROUTES
-app.get('/addElement', passport.authenticate('jwt', { session: false }), async function (req, res) {
-    res.send('private. user:' + req.user.email + ' on pourra ajoute un element ou en lodifie un deja cree')
-
-    await axios({
-        method:"post",
-        url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
-        data:utilisateur,
+    const requestUnPersonnage = await axios({
+        method:"get",
+        url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
+        params: {
+            nom: 'raiden',
+        },
         headers:{
             "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
         },
     });
 
+    console.log(requestUnPersonnage.data)
+
+    res.send('public')
 })
 
-app.get('/deleteElement', passport.authenticate('jwt', { session: false }), (req, res) => {
+app.get('/private', passport.authenticate('jwt', { session: false }), (req, res) => {
     res.send('private. user:' + req.user.email)
 })
 
 
+//PRIVATE ROUTES--------------------------------------------------------------------------------------------------------
+app.post('/addElement', passport.authenticate('jwt', { session: false }), async function (req, res) {
+    //res.send('private. user:' + req.user.email + ' on pourra ajoute un element ou en lodifie un deja cree')
 
-//PUBLIC ROOTS
-app.get('/element', (req, res) => {
-    res.send('On va selectionne un produit')
-    //CCHERCHE Si element existe
-    //donne element
+    const nom = req.body.nom
+    const element = req.body.element
+    const model   = req.body.model
+    const typeArme = req.body.typeArme
+    const pv = req.body.pv
+    const atq = req.body.atq
+    const def = req.body.def
+    const tauxCrit = req.body.tauxCrit
+    const dgtCrit = req.body.dgtCrit
+    const dgtElementaire = req.body.dgtElementaire
+    console.log(nom + " " + element + " " + model + " " + typeArme + " " + pv + " " + atq + " " + def + " " + tauxCrit + " "+ dgtCrit + " " + dgtElementaire)
+    if (!nom || !element|| !model || !typeArme|| !pv|| !atq|| !def|| !tauxCrit|| !dgtCrit || !dgtElementaire) {
+        res.status(401).json({ error: 'Un des élements à pas été renseigné.' })
+        return
+    }
 
-    //res.send('you ae on the about root')
-
-})
-
-app.get('/allelements', (req, res) => {
-    res.send('On va selectionne tout les produits produit')
-    //Chercher tout les elements
-})
-
-app.get('/util', async function (req, res){
-    const response1 = await axios({
+    const requestListePersonnage = await axios({
         method:"get",
-        url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
+        url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
         headers:{
             "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
         },
     });
 
-    //console.log(response1.data)
-
-    var users =[]
-    for (const response1Element of response1.data) {
-        console.log(response1Element.email)
-        tablogin.push({email: response1Element.email, password: response1Element.password})
-    }
-    console.log(tablogin)
-
-
-    const user = users.find(user => user.email === email)
-    if (!user){
-        res.status(401).json({ error: 'Utilisateur inconnu il faut être inscrit.' })
-        return
-    }else if(user.password !== password){
-        res.status(401).json({ error: 'Email / password do not match.' })
-        return
+    var allpersonnage =[]
+    for (const personnage of requestListePersonnage.data) {
+        allpersonnage.push({nom: personnage.nom})
+        console.log(personnage.nom)
     }
 
 
-    /*console.log(response1.data[0].email)
-    console.log(response1.data[1].email)
-    console.log(response1.data[2].email)*/
-    
+    const rechercheperso = allpersonnage.find(rechercheperso => rechercheperso.nom === nom)
+    console.log("Personnage recherche:"+ nom + "resultat: " + rechercheperso)
+    const personnage = {
+        nom: nom,
+        element: element,
+        model: model,
+        typeArme: typeArme,
+        pv: pv,
+        atq: atq,
+        def: def,
+        tauxCrit: tauxCrit,
+        dgtCrit: dgtCrit,
+        dgtElementaire: dgtElementaire
+    };
 
-    //console.log(response1.data)
-    res.send('bravo')
+    if (!rechercheperso){
+        await axios({
+            method:"post",
+            url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
+            data:personnage,
+            headers:{
+                "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+            },
+        });
+        res.send('Le personnage à été ajouté')
+    }else {
+        //TODO A VERIFIER
+        await axios({
+            method:"put",
+            url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
+            data:personnage,
+            headers:{
+                "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+            },
+        });
+        res.send('Le personnage à été modifié')
+    }
 })
 
 
 
-//POST ROUTES
+
+
+
+
+
 app.post('/inscription', async function (req, res){
     const email = req.body.email
     const pseudo = req.body.pseudo
@@ -151,6 +179,21 @@ app.post('/inscription', async function (req, res){
         password: password
     };
 
+    const listeUser = await axios({
+        method:"get",
+        url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
+        headers:{
+            "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+        },
+    });
+
+    /*for(const user of listeUser.data) {
+        console.log(user.email)
+        if (email === user.email){
+            res.send('email déjà utilisé')
+        }
+    }*/
+
     await axios({
         method:"post",
         url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
@@ -159,16 +202,17 @@ app.post('/inscription', async function (req, res){
             "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
         },
     });
-
     //const afficheInfo = await console.log(email,pseudo,password,confirmPassword)
     res.send('Bravo vous êtes inscrit. Connectez vous ici (email et password> /connexion')
 
+
 })
 
-app.post('/connexion', async function (req, res) {
 
-    console.log(req.body.email)
-    console.log(req.body.password)
+
+
+
+app.post('/connexion', async function (req, res) {
 
     const email = req.body.email
     const password = req.body.password
@@ -211,9 +255,34 @@ app.post('/connexion', async function (req, res) {
     }
 
     const userJwt = jwt.sign({ email: user.email }, secret)
-    res.json({ jwt: userJwt, ajout: '/addelement',suppression: '/deleteelement'})
+
+    res.json({ jwt: userJwt })
 })
+//------------------------------------------------------------------------------------------------------------------
 
 
-// Export the Express API
-module.exports = app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+app.listen(3000, () => {
+    console.log('Example app listening on port 3000!')
+})
