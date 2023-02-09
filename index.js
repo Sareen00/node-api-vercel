@@ -54,24 +54,59 @@ app.get('/', (req, res) => {
     res.send('Hello world!')
 })
 
-app.get('/personnage', async function (req, res){
 
 
-    const requestUnPersonnage = await axios({
+
+app.get('/personnage/:nompersonnage', async function (req, res){
+
+    console.log("parametre:" + req.params.nompersonnage)
+
+    const requestUnPersonnages = await axios({
         method:"get",
         url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
-        params: {
-            nom: 'raiden',
-        },
         headers:{
             "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
         },
     });
 
-    console.log(requestUnPersonnage.data)
+    var result;
+    for (const UnPersonnage of requestUnPersonnages.data) {
+        console.log(UnPersonnage.nom)
+        if (UnPersonnage.nom === req.params.nompersonnage){
+            result = UnPersonnage;
+        }
+    }
 
-    res.send('public')
+    /*console.log(requestUnPersonnages.data[0].nom);
+    console.log(requestUnPersonnages.data[1].nom);
+    console.log(requestUnPersonnages.data[2].nom);
+    console.log(requestUnPersonnages.data[3].nom);*/
+
+    if (result == null){
+        res.send('Le personnage demandé n\'existe pas')
+    }else {
+        res.send(result)
+    }
 })
+
+app.get('/allpersonnage', async function (req, res){
+
+    const requestPersonnages = await axios({
+        method:"get",
+        url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
+        headers:{
+            "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+        },
+    });
+
+    console.log(requestPersonnages.data)
+
+    for (const unPersonnage in requestPersonnages.data) {
+        console.log(unPersonnage[1])
+    }
+    res.send(requestPersonnages.data)
+})
+
 
 app.get('/private', passport.authenticate('jwt', { session: false }), (req, res) => {
     res.send('private. user:' + req.user.email)
@@ -156,9 +191,6 @@ app.post('/addElement', passport.authenticate('jwt', { session: false }), async 
 
 
 
-
-
-
 app.post('/inscription', async function (req, res){
     const email = req.body.email
     const pseudo = req.body.pseudo
@@ -204,11 +236,7 @@ app.post('/inscription', async function (req, res){
     });
     //const afficheInfo = await console.log(email,pseudo,password,confirmPassword)
     res.send('Bravo vous êtes inscrit. Connectez vous ici (email et password> /connexion')
-
-
 })
-
-
 
 
 
@@ -229,8 +257,6 @@ app.post('/connexion', async function (req, res) {
             "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
         },
     });
-
-    //console.log(response1.data)
 
     var users =[]
     for (const response1Element of response1.data) {
@@ -259,27 +285,6 @@ app.post('/connexion', async function (req, res) {
     res.json({ jwt: userJwt })
 })
 //------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
