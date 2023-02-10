@@ -17,13 +17,15 @@ const jwtOptions = {
     secretOrKey: secret
 }
 
+const urlpersonnage = "https://nodemilhauj-3069.restdb.io/rest/personnages"
+const urlutlisateur = "https://nodemilhauj-3069.restdb.io/rest/utilisateurs"
 
 passport.use(
     new JwtStrategy(jwtOptions, async function(payload, next) {
 
         const listUser = await axios({
             method:"get",
-            url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
+            url: urlutlisateur,
             headers:{
                 "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
             },
@@ -47,41 +49,70 @@ passport.use(
 )
 
 app.use(passport.initialize())
-
 app.use(express.json())
 
+
+
+
+
 app.get('/', (req, res) => {
-    res.send('Hello world!')
+    res.send('Bienvenu sur l\'application de comparaison!')
 })
 
-
-
-
-app.get('/personnage/:nompersonnage', async function (req, res){
-
-    console.log("parametre:" + req.params.nompersonnage)
-
-    const requestUnPersonnages = await axios({
+async function getAllPersonnages(){
+    const requestAllPersonnages = await axios({
         method:"get",
-        url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
+        url: urlpersonnage,
         headers:{
             "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
         },
     });
+    return requestAllPersonnages.data;
+}
 
-    var result;
-    for (const UnPersonnage of requestUnPersonnages.data) {
-        console.log(UnPersonnage.nom)
-        if (UnPersonnage.nom === req.params.nompersonnage){
+async function getPersonnageByName(nomPersonnageRetourne){
+    const DataAllPersonnages = await getAllPersonnages();
+    var result
+    for (const UnPersonnage of DataAllPersonnages) {
+        if (UnPersonnage.nom === nomPersonnageRetourne){
             result = UnPersonnage;
         }
     }
+    if (result==null){
+        res.send('Le personnage demandé n\'existe pas')
+    }else{
+        return result
+    }
+}
 
-    /*console.log(requestUnPersonnages.data[0].nom);
-    console.log(requestUnPersonnages.data[1].nom);
-    console.log(requestUnPersonnages.data[2].nom);
-    console.log(requestUnPersonnages.data[3].nom);*/
+async function getIdPersonnageByName(nomPersonnageRetourne){
+    const DataAllPersonnages = await getAllPersonnages();
+    for (const UnPersonnage of DataAllPersonnages) {
+        if (UnPersonnage.nom === nomPersonnageRetourne) {
+            return UnPersonnage._id;
+        }
+    }
+    return false;
+}
 
+app.delete("/deletepersonnage/:nom",async function (req, res){
+    await console.log(req.params.nom)
+    const idPersonnageASupprimer = await getIdPersonnageByName(req.params.nom)
+    await console.log(idPersonnageASupprimer)
+
+    if (idPersonnageASupprimer === false){
+        res.send('Le personnage ' + req.params.nom + ' n\'existe pas')
+    }else {
+        urlADelete = urlpersonnage + "/" + idPersonnageASupprimer
+        console.log(urlADelete)
+        //axios.delete(urlpersonnage)
+    }
+})
+
+
+
+app.get('/personnage/:nompersonnage', async function (req, res){
+    var result = await getPersonnageByName(req.params.nompersonnage)
     if (result == null){
         res.send('Le personnage demandé n\'existe pas')
     }else {
@@ -89,28 +120,51 @@ app.get('/personnage/:nompersonnage', async function (req, res){
     }
 })
 
+
+// app.get('/personnage/:nompersonnage', async function (req, res){
+//
+//     console.log("parametre:" + req.params.nompersonnage)
+//
+//     const requestUnPersonnages = await axios({
+//         method:"get",
+//         url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
+//         headers:{
+//             "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+//         },
+//     });
+//
+//     var result;
+//     for (const UnPersonnage of requestUnPersonnages.data) {
+//         console.log(UnPersonnage.nom)
+//         if (UnPersonnage.nom === req.params.nompersonnage){
+//             result = UnPersonnage;
+//         }
+//     }
+//
+//     /*console.log(requestUnPersonnages.data[0].nom);
+//     console.log(requestUnPersonnages.data[1].nom);
+//     console.log(requestUnPersonnages.data[2].nom);
+//     console.log(requestUnPersonnages.data[3].nom);*/
+//
+//     if (result == null){
+//         res.send('Le personnage demandé n\'existe pas')
+//     }else {
+//         res.send(result)
+//     }
+// })
+
+
 app.get('/allpersonnage', async function (req, res){
-
-    const requestPersonnages = await axios({
-        method:"get",
-        url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
-        headers:{
-            "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
-        },
-    });
-
-    console.log(requestPersonnages.data)
-
-    for (const unPersonnage in requestPersonnages.data) {
-        console.log(unPersonnage[1])
-    }
-    res.send(requestPersonnages.data)
+    const dataAllPersonnages = await getAllPersonnages()
+    res.send(dataAllPersonnages)
 })
 
 
 app.get('/private', passport.authenticate('jwt', { session: false }), (req, res) => {
     res.send('private. user:' + req.user.email)
 })
+
+
 
 
 //PRIVATE ROUTES--------------------------------------------------------------------------------------------------------
@@ -186,6 +240,20 @@ app.post('/addElement', passport.authenticate('jwt', { session: false }), async 
         res.send('Le personnage à été modifié')
     }
 })
+
+
+app.delete('/deleteElement/:nompersonnageasupprimer', passport.authenticate('jwt', { session: false }), async function (req, res) {
+    //res.send('private. user:' + req.user.email + ' on pourra ajoute un element ou en lodifie un deja cree')
+    const nomPersonnageASupprimer = req.params.nompersonnageasupprimer;
+
+})
+
+
+
+
+
+
+
 
 
 
