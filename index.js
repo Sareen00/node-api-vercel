@@ -52,9 +52,6 @@ app.use(passport.initialize())
 app.use(express.json())
 
 
-
-
-
 app.get('/', (req, res) => {
     res.send('Bienvenu sur l\'application de comparaison!')
 })
@@ -95,7 +92,7 @@ async function getIdPersonnageByName(nomPersonnageRetourne){
     return false;
 }
 
-app.delete("/deletepersonnage/:nom",async function (req, res){
+app.get("/deletepersonnage/:nom",async function (req, res){
     await console.log(req.params.nom)
     const idPersonnageASupprimer = await getIdPersonnageByName(req.params.nom)
     await console.log(idPersonnageASupprimer)
@@ -105,7 +102,13 @@ app.delete("/deletepersonnage/:nom",async function (req, res){
     }else {
         urlADelete = urlpersonnage + "/" + idPersonnageASupprimer
         console.log(urlADelete)
-        //axios.delete(urlpersonnage)
+        await axios({
+            method:"delete",
+            url: urlADelete,
+            headers:{
+                "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+            },
+        });
     }
 })
 
@@ -120,38 +123,6 @@ app.get('/personnage/:nompersonnage', async function (req, res){
     }
 })
 
-
-// app.get('/personnage/:nompersonnage', async function (req, res){
-//
-//     console.log("parametre:" + req.params.nompersonnage)
-//
-//     const requestUnPersonnages = await axios({
-//         method:"get",
-//         url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
-//         headers:{
-//             "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
-//         },
-//     });
-//
-//     var result;
-//     for (const UnPersonnage of requestUnPersonnages.data) {
-//         console.log(UnPersonnage.nom)
-//         if (UnPersonnage.nom === req.params.nompersonnage){
-//             result = UnPersonnage;
-//         }
-//     }
-//
-//     /*console.log(requestUnPersonnages.data[0].nom);
-//     console.log(requestUnPersonnages.data[1].nom);
-//     console.log(requestUnPersonnages.data[2].nom);
-//     console.log(requestUnPersonnages.data[3].nom);*/
-//
-//     if (result == null){
-//         res.send('Le personnage demandé n\'existe pas')
-//     }else {
-//         res.send(result)
-//     }
-// })
 
 
 app.get('/allpersonnage', async function (req, res){
