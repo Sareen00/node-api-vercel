@@ -52,10 +52,6 @@ app.use(passport.initialize())
 app.use(express.json())
 
 
-app.get('/', (req, res) => {
-    res.send('Bienvenu sur l\'application de comparaison!')
-})
-
 async function getAllPersonnages(){
     const requestAllPersonnages = await axios({
         method:"get",
@@ -92,7 +88,18 @@ async function getIdPersonnageByName(nomPersonnageRetourne){
     return false;
 }
 
-app.get("/deletepersonnage/:nom",async function (req, res){
+
+
+app.get('/', (req, res) => {
+    res.send('Bienvenu sur l\'application de comparaison!')
+})
+
+
+
+
+
+
+app.delete("/deletepersonnage/:nom",async function (req, res){
     await console.log(req.params.nom)
     const idPersonnageASupprimer = await getIdPersonnageByName(req.params.nom)
     await console.log(idPersonnageASupprimer)
@@ -152,29 +159,29 @@ app.post('/addElement', passport.authenticate('jwt', { session: false }), async 
     const tauxCrit = req.body.tauxCrit
     const dgtCrit = req.body.dgtCrit
     const dgtElementaire = req.body.dgtElementaire
-    console.log(nom + " " + element + " " + model + " " + typeArme + " " + pv + " " + atq + " " + def + " " + tauxCrit + " "+ dgtCrit + " " + dgtElementaire)
-    if (!nom || !element|| !model || !typeArme|| !pv|| !atq|| !def|| !tauxCrit|| !dgtCrit || !dgtElementaire) {
+    const imgSrc = req.body.imgSrc
+
+
+
+    //Vérifie si tout les element necessaire pour l'injection dans la bdd on était renseigné
+    console.log(nom + " " + element + " " + model + " " + typeArme + " " + pv + " " + atq + " " + def + " " + tauxCrit + " "+ dgtCrit + " " + dgtElementaire + " " + imgSrc)
+    if (!nom || !element|| !model || !typeArme|| !pv|| !atq|| !def|| !tauxCrit|| !dgtCrit || !dgtElementaire || !imgSrc) {
         res.status(401).json({ error: 'Un des élements à pas été renseigné.' })
         return
     }
 
-    const requestListePersonnage = await axios({
-        method:"get",
-        url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
-        headers:{
-            "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
-        },
-    });
+    //Récupère tout les personnages de la bdd pour vérifié si il existe déjà
+    const ListePersonnage = await getAllPersonnages()
 
     var allpersonnage =[]
-    for (const personnage of requestListePersonnage.data) {
+    for (const personnage of ListePersonnage) {
         allpersonnage.push({nom: personnage.nom})
         console.log(personnage.nom)
     }
 
 
     const rechercheperso = allpersonnage.find(rechercheperso => rechercheperso.nom === nom)
-    console.log("Personnage recherche:"+ nom + "resultat: " + rechercheperso)
+    await console.log("Personnage recherche:"+ nom + " resultat: " + rechercheperso)
     const personnage = {
         nom: nom,
         element: element,
@@ -185,7 +192,8 @@ app.post('/addElement', passport.authenticate('jwt', { session: false }), async 
         def: def,
         tauxCrit: tauxCrit,
         dgtCrit: dgtCrit,
-        dgtElementaire: dgtElementaire
+        dgtElementaire: dgtElementaire,
+        imgSrc: imgSrc
     };
 
     if (!rechercheperso){
@@ -200,9 +208,12 @@ app.post('/addElement', passport.authenticate('jwt', { session: false }), async 
         res.send('Le personnage à été ajouté')
     }else {
         //TODO A VERIFIER
+        idPersonnageASupprime = await getIdPersonnageByName(nom);
+        var urlPersonnageAsupprimer = urlpersonnage + "/" + idPersonnageASupprime
+        console.log("Url a supprime : " + idPersonnageASupprime)
         await axios({
             method:"put",
-            url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
+            url: urlPersonnageAsupprimer,
             data:personnage,
             headers:{
                 "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
@@ -218,13 +229,6 @@ app.delete('/deleteElement/:nompersonnageasupprimer', passport.authenticate('jwt
     const nomPersonnageASupprimer = req.params.nompersonnageasupprimer;
 
 })
-
-
-
-
-
-
-
 
 
 
