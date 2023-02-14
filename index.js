@@ -320,7 +320,8 @@ app.post('/connexion', async function (req, res) {
     // });
 
     const response1 = await getAllUtilisateurs()
-
+    console.log(response1)
+    
     var users =[]
     for (const response1Element of response1.data) {
         console.log(response1Element.email)
@@ -338,10 +339,10 @@ app.post('/connexion', async function (req, res) {
         return
     }
 
-    if (!user || user.password !== password) {
-        res.status(401).json({ error: 'Email / password do not match.' })
-        return
-    }
+    // if (!user || user.password !== password) {
+    //     res.status(401).json({ error: 'Email / password do not match.' })
+    //     return
+    // }
 
     const userJwt = jwt.sign({ email: user.email }, secret)
 
