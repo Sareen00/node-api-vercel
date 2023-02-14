@@ -3,6 +3,8 @@
 const express = require('express')
 const app = express()
 
+
+const cors = require('cors')
 const axios = require('axios')
 
 const passport = require('passport')
@@ -11,6 +13,9 @@ const passportJWT = require('passport-jwt')
 const secret = 'thisismysecret'
 const ExtractJwt = passportJWT.ExtractJwt
 const JwtStrategy = passportJWT.Strategy
+
+app.use(cors())
+
 
 const jwtOptions = {
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
