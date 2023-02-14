@@ -148,7 +148,7 @@ app.get('/allpersonnage', async function (req, res){
 
 
 //PRIVATE ROUTES--------------------------------------------------------------------------------------------------------
-app.post('/addElement', passport.authenticate('jwt', { session: false }), async function (req, res) {
+app.post('/addpersonnage', passport.authenticate('jwt', { session: false }), async function (req, res) {
     //res.send('private. user:' + req.user.email + ' on pourra ajoute un element ou en lodifie un deja cree')
 
     const nom = req.body.nom
@@ -226,7 +226,7 @@ app.post('/addElement', passport.authenticate('jwt', { session: false }), async 
 })
 
 
-app.delete('/deleteElement/:nompersonnageasupprimer', passport.authenticate('jwt', { session: false }), async function (req, res) {
+app.delete('/deletePersonnage/:nompersonnageasupprimer', passport.authenticate('jwt', { session: false }), async function (req, res) {
     //res.send('private. user:' + req.user.email + ' on pourra ajoute un element ou en lodifie un deja cree')
 
     await console.log(req.params.nompersonnageasupprimer)
@@ -245,6 +245,7 @@ app.delete('/deleteElement/:nompersonnageasupprimer', passport.authenticate('jwt
                 "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
             },
         });
+        res.send('Le personnage à été supprimé')
     }
 })
 
@@ -321,9 +322,9 @@ app.post('/connexion', async function (req, res) {
 
     const response1 = await getAllUtilisateurs()
     console.log(response1)
-    
+
     var users =[]
-    for (const response1Element of response1.data) {
+    for (const response1Element of response1) {
         console.log(response1Element.email)
         users.push({email: response1Element.email, password: response1Element.password})
     }
