@@ -62,7 +62,6 @@ async function getAllPersonnages(){
     });
     return requestAllPersonnages.data;
 }
-
 async function getPersonnageByName(nomPersonnageRetourne){
     const DataAllPersonnages = await getAllPersonnages();
     var result
@@ -77,7 +76,6 @@ async function getPersonnageByName(nomPersonnageRetourne){
         return result
     }
 }
-
 async function getIdPersonnageByName(nomPersonnageRetourne){
     const DataAllPersonnages = await getAllPersonnages();
     for (const UnPersonnage of DataAllPersonnages) {
@@ -87,6 +85,16 @@ async function getIdPersonnageByName(nomPersonnageRetourne){
     }
     return false;
 }
+async function getAllUtilisateurs(){
+    const requestAllUtilisateurs= await axios({
+        method:"get",
+        url: urlutlisateur,
+        headers:{
+            "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+        },
+    });
+    return requestAllUtilisateurs.data;
+}
 
 
 
@@ -95,29 +103,25 @@ app.get('/', (req, res) => {
 })
 
 
-
-
-
-
-app.delete("/deletepersonnage/:nom",async function (req, res){
-    await console.log(req.params.nom)
-    const idPersonnageASupprimer = await getIdPersonnageByName(req.params.nom)
-    await console.log(idPersonnageASupprimer)
-
-    if (idPersonnageASupprimer === false){
-        res.send('Le personnage ' + req.params.nom + ' n\'existe pas')
-    }else {
-        urlADelete = urlpersonnage + "/" + idPersonnageASupprimer
-        console.log(urlADelete)
-        await axios({
-            method:"delete",
-            url: urlADelete,
-            headers:{
-                "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
-            },
-        });
-    }
-})
+// app.delete("/deletepersonnage/:nom",async function (req, res){
+//     await console.log(req.params.nom)
+//     const idPersonnageASupprimer = await getIdPersonnageByName(req.params.nom)
+//     await console.log(idPersonnageASupprimer)
+//
+//     if (idPersonnageASupprimer === false){
+//         res.send('Le personnage ' + req.params.nom + ' n\'existe pas')
+//     }else {
+//         urlADelete = urlpersonnage + "/" + idPersonnageASupprimer
+//         console.log(urlADelete)
+//         await axios({
+//             method:"delete",
+//             url: urlADelete,
+//             headers:{
+//                 "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+//             },
+//         });
+//     }
+// })
 
 
 
@@ -136,13 +140,6 @@ app.get('/allpersonnage', async function (req, res){
     const dataAllPersonnages = await getAllPersonnages()
     res.send(dataAllPersonnages)
 })
-
-
-app.get('/private', passport.authenticate('jwt', { session: false }), (req, res) => {
-    res.send('private. user:' + req.user.email)
-})
-
-
 
 
 //PRIVATE ROUTES--------------------------------------------------------------------------------------------------------
@@ -226,8 +223,24 @@ app.post('/addElement', passport.authenticate('jwt', { session: false }), async 
 
 app.delete('/deleteElement/:nompersonnageasupprimer', passport.authenticate('jwt', { session: false }), async function (req, res) {
     //res.send('private. user:' + req.user.email + ' on pourra ajoute un element ou en lodifie un deja cree')
-    const nomPersonnageASupprimer = req.params.nompersonnageasupprimer;
 
+    await console.log(req.params.nompersonnageasupprimer)
+    const idPersonnageASupprimer = await getIdPersonnageByName(req.params.nompersonnageasupprimer)
+    await console.log(idPersonnageASupprimer)
+
+    if (idPersonnageASupprimer === false){
+        res.send('Le personnage ' + req.params.nom + ' n\'existe pas')
+    }else {
+        urlADelete = urlpersonnage + "/" + idPersonnageASupprimer
+        console.log(urlADelete)
+        await axios({
+            method:"delete",
+            url: urlADelete,
+            headers:{
+                "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+            },
+        });
+    }
 })
 
 
@@ -236,12 +249,11 @@ app.delete('/deleteElement/:nompersonnageasupprimer', passport.authenticate('jwt
 
 app.post('/inscription', async function (req, res){
     const email = req.body.email
-    const pseudo = req.body.pseudo
     const password = req.body.password
     const confirmPassword = req.body.confirmPassword
 
-    if (!email || !password || !pseudo || !confirmPassword) {
-        res.status(401).json({ error: 'Email, password,pseudo or password confirmation was not provided.' })
+    if (!email || !password || !confirmPassword) {
+        res.status(401).json({ error: 'Email, password, or password confirmation was not provided.' })
         return
     }else if (password !== confirmPassword){
         res.status(401).json({ error: 'The password and the confirmation password are different.' })
@@ -250,17 +262,18 @@ app.post('/inscription', async function (req, res){
 
     const utilisateur = {
         email: email,
-        pseudo: pseudo,
         password: password
     };
 
-    const listeUser = await axios({
-        method:"get",
-        url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
-        headers:{
-            "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
-        },
-    });
+    // const listeUser = await axios({
+    //     method:"get",
+    //     url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
+    //     headers:{
+    //         "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+    //     },
+    // });
+
+    const listeUser = await getAllUtilisateurs()
 
     /*for(const user of listeUser.data) {
         console.log(user.email)
@@ -271,7 +284,7 @@ app.post('/inscription', async function (req, res){
 
     await axios({
         method:"post",
-        url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
+        url: urlutlisateur,
         data:utilisateur,
         headers:{
             "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
@@ -293,13 +306,15 @@ app.post('/connexion', async function (req, res) {
         return
     }
 
-    const response1 = await axios({
-        method:"get",
-        url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
-        headers:{
-            "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
-        },
-    });
+    // const response1 = await axios({
+    //     method:"get",
+    //     url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
+    //     headers:{
+    //         "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+    //     },
+    // });
+
+    const response1 = await getAllUtilisateurs()
 
     var users =[]
     for (const response1Element of response1.data) {
