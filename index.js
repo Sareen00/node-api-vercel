@@ -168,8 +168,8 @@ app.post('/addpersonnage', passport.authenticate('jwt', { session: false }), asy
 
 
     //Vérifie si tout les element necessaire pour l'injection dans la bdd on était renseigné
-    console.log(nom + " " + element + " " + model + " " + typeArme + " " + pv + " " + atq + " " + def + " " + tauxCrit + " "+ dgtCrit + " " + dgtElementaire + " " + imgSrc)
-    if (!nom || !description || !element || !model || !typeArme|| !pv|| !dgt || !def|| !tauxCrit|| !dgtCrit || !dgtElementaire || archon || !imgSrc) {
+    console.log(nom + " " + element + " " + model + " " + typeArme + " " + pv + " " + dgt + " " + def + " " + tauxCrit + " "+ dgtCrit + " " + dgtElementaire + " " + imgSrc)
+    if (!nom || !description || !element || !model || !typeArme|| !pv|| !dgt || !def|| !tauxCrit|| !dgtCrit || !dgtElementaire || !archon || !imgSrc) {
         res.status(401).json({ error: 'Un des élements à pas été renseigné.' })
         return
     }
@@ -201,7 +201,7 @@ app.post('/addpersonnage', passport.authenticate('jwt', { session: false }), asy
         archon: archon,
         imgSrc: imgSrc
     };
-    
+
 
     if (!rechercheperso){
         await axios({
