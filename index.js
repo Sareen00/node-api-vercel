@@ -152,22 +152,24 @@ app.post('/addpersonnage', passport.authenticate('jwt', { session: false }), asy
     //res.send('private. user:' + req.user.email + ' on pourra ajoute un element ou en lodifie un deja cree')
 
     const nom = req.body.nom
+    const description = req.body.description
     const element = req.body.element
     const model   = req.body.model
     const typeArme = req.body.typeArme
     const pv = req.body.pv
-    const atq = req.body.atq
+    const dgt = req.body.dgt
     const def = req.body.def
     const tauxCrit = req.body.tauxCrit
     const dgtCrit = req.body.dgtCrit
     const dgtElementaire = req.body.dgtElementaire
+    const archon = req.body.archon
     const imgSrc = req.body.imgSrc
 
 
 
     //Vérifie si tout les element necessaire pour l'injection dans la bdd on était renseigné
     console.log(nom + " " + element + " " + model + " " + typeArme + " " + pv + " " + atq + " " + def + " " + tauxCrit + " "+ dgtCrit + " " + dgtElementaire + " " + imgSrc)
-    if (!nom || !element|| !model || !typeArme|| !pv|| !atq|| !def|| !tauxCrit|| !dgtCrit || !dgtElementaire || !imgSrc) {
+    if (!nom || !description || !element || !model || !typeArme|| !pv|| !dgt || !def|| !tauxCrit|| !dgtCrit || !dgtElementaire || archon || !imgSrc) {
         res.status(401).json({ error: 'Un des élements à pas été renseigné.' })
         return
     }
@@ -186,17 +188,20 @@ app.post('/addpersonnage', passport.authenticate('jwt', { session: false }), asy
     await console.log("Personnage recherche:"+ nom + " resultat: " + rechercheperso)
     const personnage = {
         nom: nom,
+        description: description,
         element: element,
         model: model,
         typeArme: typeArme,
         pv: pv,
-        atq: atq,
+        dgt: dgt,
         def: def,
         tauxCrit: tauxCrit,
         dgtCrit: dgtCrit,
         dgtElementaire: dgtElementaire,
+        archon: archon,
         imgSrc: imgSrc
     };
+    
 
     if (!rechercheperso){
         await axios({
