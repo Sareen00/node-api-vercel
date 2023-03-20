@@ -57,192 +57,180 @@ app.use(passport.initialize())
 app.use(express.json())
 
 
-async function getAllPersonnages(){
-    const requestAllPersonnages = await axios({
-        method:"get",
-        url: urlpersonnage,
-        headers:{
-            "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+async function getAllPersonnages() {
+    try {
+      const response = await axios.get(urlpersonnage, {
+        headers: {
+          "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
         },
-    });
-    return requestAllPersonnages.data;
-}
-async function getPersonnageByName(nomPersonnageRetourne){
-    const DataAllPersonnages = await getAllPersonnages();
-    var result
-    for (const UnPersonnage of DataAllPersonnages) {
-        if (UnPersonnage.nom === nomPersonnageRetourne){
-            result = UnPersonnage;
-        }
+      });
+  
+      return response.data;
+    } catch (error) {
+      console.error("Error while getting all personnages:", error);
+      throw error;
     }
-    if (result==null){
-        res.send('Le personnage demandé n\'existe pas')
-    }else{
-        return result
-    }
-}
-async function getIdPersonnageByName(nomPersonnageRetourne){
-    const DataAllPersonnages = await getAllPersonnages();
-    for (const UnPersonnage of DataAllPersonnages) {
-        if (UnPersonnage.nom === nomPersonnageRetourne) {
-            return UnPersonnage._id;
-        }
-    }
-    return false;
-}
-async function getAllUtilisateurs(){
-    const requestAllUtilisateurs= await axios({
-        method:"get",
-        url: urlutlisateur,
-        headers:{
-            "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
-        },
-    });
-    return requestAllUtilisateurs.data;
 }
 
 
+async function getPersonnageByName(nomPersonnageRetourne) {
+    const dataAllPersonnages = await getAllPersonnages();
+    const result = dataAllPersonnages.find(personnage => personnage.nom === nomPersonnageRetourne);
+  
+    if (!result) {
+      return null;
+    }
+  
+    return result;
+}
+
+
+
+async function getIdPersonnageByName(nomPersonnageRetourne) {
+  const allPersonnages = await getAllPersonnages();
+  for (const personnage of allPersonnages) {
+    if (personnage.nom === nomPersonnageRetourne) {
+      return personnage._id;
+    }
+  }
+  return null;
+}
+
+async function getAllUtilisateurs() {
+    const response = await axios.get(urlutlisateur, {
+      headers: { "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef" },
+    });
+    return response.data;
+  }
 
 app.get('/', (req, res) => {
     res.send('Bienvenu sur l\'application de comparaison!')
 })
 
 
-// app.delete("/deletepersonnage/:nom",async function (req, res){
-//     await console.log(req.params.nom)
-//     const idPersonnageASupprimer = await getIdPersonnageByName(req.params.nom)
-//     await console.log(idPersonnageASupprimer)
-//
-//     if (idPersonnageASupprimer === false){
-//         res.send('Le personnage ' + req.params.nom + ' n\'existe pas')
-//     }else {
-//         urlADelete = urlpersonnage + "/" + idPersonnageASupprimer
-//         console.log(urlADelete)
-//         await axios({
-//             method:"delete",
-//             url: urlADelete,
-//             headers:{
-//                 "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
-//             },
-//         });
-//     }
-// })
-
-
-
-app.get('/personnage/:nompersonnage', async function (req, res){
-    var result = await getPersonnageByName(req.params.nompersonnage)
-    if (result == null){
-        res.send('Le personnage demandé n\'existe pas')
-    }else {
-        res.send(result)
+app.get('/personnage/:nompersonnage', async function (req, res) {
+    try {
+      const nomPersonnage = req.params.nompersonnage;
+      const personnage = await getPersonnageByName(nomPersonnage);
+      if (personnage) {
+        res.send(personnage);
+      } else {
+        res.status(404).send(`Le personnage ${nomPersonnage} n'existe pas.`);
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Erreur lors de la récupération du personnage.");
     }
-})
+  });
+  
 
 
 
-app.get('/allpersonnage', async function (req, res){
-    const dataAllPersonnages = await getAllPersonnages()
-    res.send(dataAllPersonnages)
-})
+  app.get('/allpersonnage', async function (req, res){
+    try {
+        const dataAllPersonnages = await getAllPersonnages();
+        res.send(dataAllPersonnages);
+    } catch (error) {
+        console.error("Error while getting all personnages:", error);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
 
 
 //PRIVATE ROUTES--------------------------------------------------------------------------------------------------------
 app.post('/addpersonnage', passport.authenticate('jwt', { session: false }), async function (req, res) {
-    //res.send('private. user:' + req.user.email + ' on pourra ajoute un element ou en lodifie un deja cree')
-
-    const nom = req.body.nom
-    const description = req.body.description
-    const element = req.body.element
-    const model   = req.body.model
-    const typeArme = req.body.typeArme
-    const pv = req.body.pv
-    const dgt = req.body.dgt
-    const def = req.body.def
-    const tauxCrit = req.body.tauxCrit
-    const dgtCrit = req.body.dgtCrit
-    const dgtElementaire = req.body.dgtElementaire
-    const archon = req.body.archon
-    const imgSrc = req.body.imgSrc
-
-
-
-    //Vérifie si tout les element necessaire pour l'injection dans la bdd on était renseigné
-    console.log(nom + " " + element + " " + model + " " + typeArme + " " + pv + " " + dgt + " " + def + " " + tauxCrit + " "+ dgtCrit + " " + dgtElementaire + " " + imgSrc)
-    if (!nom || !description || !element || !model || !typeArme|| !pv|| !dgt || !def|| !tauxCrit|| !dgtCrit || !dgtElementaire || !archon || !imgSrc) {
-        res.status(401).json({ error: 'Un des élements à pas été renseigné.' })
-        return
-    }
-
-    //Récupère tout les personnages de la bdd pour vérifié si il existe déjà
-    const ListePersonnage = await getAllPersonnages()
-
-    var allpersonnage =[]
-    for (const personnage of ListePersonnage) {
-        allpersonnage.push({nom: personnage.nom})
-        console.log(personnage.nom)
-    }
-
-
-    const rechercheperso = allpersonnage.find(rechercheperso => rechercheperso.nom === nom)
-    await console.log("Personnage recherche:"+ nom + " resultat: " + rechercheperso)
-    const personnage = {
-        nom: nom,
-        description: description,
-        element: element,
-        model: model,
-        typeArme: typeArme,
-        pv: pv,
-        dgt: dgt,
-        def: def,
-        tauxCrit: tauxCrit,
-        dgtCrit: dgtCrit,
-        dgtElementaire: dgtElementaire,
-        archon: archon,
-        imgSrc: imgSrc
-    };
-
-
-    if (!rechercheperso){
+    try {
+      const { nom, description, element, model, typeArme, pv, dgt, def, tauxCrit, dgtCrit, dgtElementaire, archon, imgSrc } = req.body;
+  
+      // Vérifie si tous les éléments nécessaires pour l'injection dans la BDD ont été renseignés
+      if (!nom || !description || !element || !model || !typeArme || !pv || !dgt || !def || !tauxCrit || !dgtCrit || !dgtElementaire || !archon || !imgSrc) {
+        return res.status(401).json({ error: 'Un des éléments n\'a pas été renseigné.' });
+      }
+  
+      // Récupère tous les personnages de la BDD pour vérifier s'ils existent déjà
+      const listePersonnage = await getAllPersonnages();
+      const isExistingPersonnage = listePersonnage.some(personnage => personnage.nom === nom);
+  
+      if (!isExistingPersonnage) {
         await axios({
-            method:"post",
-            url: `https://nodemilhauj-3069.restdb.io/rest/personnages`,
-            data:personnage,
-            headers:{
-                "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
-            },
+          method: "post",
+          url: urlpersonnage,
+          data: {
+            nom,
+            description,
+            element,
+            model,
+            typeArme,
+            pv,
+            dgt,
+            def,
+            tauxCrit,
+            dgtCrit,
+            dgtElementaire,
+            archon,
+            imgSrc
+          },
+          headers: {
+            "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+          },
         });
-        res.send('Le personnage à été ajouté')
-    }else {
-        //TODO A VERIFIER
-        idPersonnageASupprime = await getIdPersonnageByName(nom);
-        var urlPersonnageAsupprimer = urlpersonnage + "/" + idPersonnageASupprime
-        console.log("Url a supprime : " + idPersonnageASupprime)
+        return res.send('Le personnage a été ajouté.');
+      } else {
+        // Récupère l'id du personnage à modifier
+        const idPersonnageASupprimer = await getIdPersonnageByName(nom);
+        const urlPersonnageAsupprimer = urlpersonnage + "/" + idPersonnageASupprimer;
+  
         await axios({
-            method:"put",
-            url: urlPersonnageAsupprimer,
-            data:personnage,
-            headers:{
-                "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
-            },
+          method: "put",
+          url: urlPersonnageAsupprimer,
+          data: {
+            nom,
+            description,
+            element,
+            model,
+            typeArme,
+            pv,
+            dgt,
+            def,
+            tauxCrit,
+            dgtCrit,
+            dgtElementaire,
+            archon,
+            imgSrc
+          },
+          headers: {
+            "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
+          },
         });
-        res.send('Le personnage à été modifié')
+        return res.send('Le personnage a été modifié.');
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Erreur serveur.');
     }
-})
+  });
+  
+
 
 
 app.delete('/deletePersonnage/:nompersonnageasupprimer', passport.authenticate('jwt', { session: false }), async function (req, res) {
-    //res.send('private. user:' + req.user.email + ' on pourra ajoute un element ou en lodifie un deja cree')
+    try {
+        // Récupération du nom du personnage à supprimer depuis les paramètres de l'URL
+        const nomPersonnageASupprimer = req.params.nompersonnageasupprimer;
 
-    await console.log(req.params.nompersonnageasupprimer)
-    const idPersonnageASupprimer = await getIdPersonnageByName(req.params.nompersonnageasupprimer)
-    await console.log(idPersonnageASupprimer)
+        // Récupération de l'ID du personnage à supprimer à partir de son nom
+        const idPersonnageASupprimer = await getIdPersonnageByName(nomPersonnageASupprimer);
 
-    if (idPersonnageASupprimer === false){
-        res.send('Le personnage ' + req.params.nom + ' n\'existe pas')
-    }else {
-        urlADelete = urlpersonnage + "/" + idPersonnageASupprimer
-        console.log(urlADelete)
+        // Vérification que le personnage existe dans la base de données
+        if (idPersonnageASupprimer === false){
+            return res.status(404).send('Le personnage ' + nomPersonnageASupprimer + ' n\'existe pas');
+        }
+
+        // Construction de l'URL de la requête DELETE à partir de l'ID du personnage
+        const urlADelete = urlpersonnage + "/" + idPersonnageASupprimer;
+
+        // Envoi de la requête DELETE à l'API pour supprimer le personnage
         await axios({
             method:"delete",
             url: urlADelete,
@@ -250,9 +238,16 @@ app.delete('/deletePersonnage/:nompersonnageasupprimer', passport.authenticate('
                 "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
             },
         });
-        res.send('Le personnage à été supprimé')
+
+        // Retour d'une réponse indiquant que le personnage a bien été supprimé
+        return res.send('Le personnage ' + nomPersonnageASupprimer + ' a été supprimé');
+    } catch (error) {
+        // Gestion des erreurs en renvoyant une réponse avec le code d'erreur approprié
+        console.error(error);
+        return res.status(500).send('Une erreur est survenue lors de la suppression du personnage');
     }
-})
+});
+
 
 
 
@@ -264,10 +259,10 @@ app.post('/inscription', async function (req, res){
     const confirmPassword = req.body.confirmPassword
 
     if (!email || !password || !confirmPassword) {
-        res.status(401).json({ error: 'Email, password, or password confirmation was not provided.' })
+        res.status(401).json({ error: 'Email, password, ou confirmPassword non renseigné.' })
         return
-    }else if (password !== confirmPassword){
-        res.status(401).json({ error: 'The password and the confirmation password are different.' })
+    } else if (password !== confirmPassword){
+        res.status(401).json({ error: 'Le password  et le confirmPassword sont différents.' })
         return
     }
 
@@ -276,22 +271,15 @@ app.post('/inscription', async function (req, res){
         password: password
     };
 
-    // const listeUser = await axios({
-    //     method:"get",
-    //     url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
-    //     headers:{
-    //         "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
-    //     },
-    // });
-
     const listeUser = await getAllUtilisateurs()
-
-    /*for(const user of listeUser.data) {
+    console.log("Voila dans quoi on verifie les email: " + listeUser)
+    for(const user of listeUser) {
         console.log(user.email)
         if (email === user.email){
-            res.send('email déjà utilisé')
+            res.status(401).json({ error: 'Email déjà utilisé.' })
+            return // ajout de return ici pour éviter l'envoi de plusieurs réponses
         }
-    }*/
+    }
 
     await axios({
         method:"post",
@@ -301,9 +289,10 @@ app.post('/inscription', async function (req, res){
             "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
         },
     });
-    //const afficheInfo = await console.log(email,pseudo,password,confirmPassword)
+
     res.send('Bravo vous êtes inscrit. Connectez vous ici (email et password> /connexion')
 })
+
 
 
 
@@ -313,17 +302,10 @@ app.post('/connexion', async function (req, res) {
     const password = req.body.password
 
     if (!email || !password) {
-        res.status(401).json({ error: 'Email or password was not provided.' })
+        res.status(401).json({ error: 'Email ou password non renseigné.' })
         return
     }
 
-    // const response1 = await axios({
-    //     method:"get",
-    //     url: `https://nodemilhauj-3069.restdb.io/rest/utilisateurs`,
-    //     headers:{
-    //         "x-apikey": "aac82f5b135ec774843b7536945f64f4f57ef",
-    //     },
-    // });
 
     const response1 = await getAllUtilisateurs()
     console.log(response1)
@@ -341,14 +323,9 @@ app.post('/connexion', async function (req, res) {
         res.status(401).json({ error: 'Utilisateur inconnu il faut être inscrit.' })
         return
     }else if(user.password !== password){
-        res.status(401).json({ error: 'Email / password do not match.' })
+        res.status(401).json({ error: 'Email / password ne correspondent pas.' })
         return
     }
-
-    // if (!user || user.password !== password) {
-    //     res.status(401).json({ error: 'Email / password do not match.' })
-    //     return
-    // }
 
     const userJwt = jwt.sign({ email: user.email }, secret)
 
